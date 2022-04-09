@@ -89,6 +89,9 @@ public class E3DCConnector {
                         "Could not connect to host");
             } catch (IOException e) {
                 handle.updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "Connection error");
+            } catch (Throwable e) {
+                logger.error("Connection error", e);
+                handle.updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "Connection error");
             }
         }
     }
@@ -120,23 +123,37 @@ public class E3DCConnector {
         setCharValue(RSCPTag.TAG_EMS_REQ_SET_POWER_SETTINGS, RSCPTag.TAG_EMS_POWERSAVE_ENABLED, charValue);
     }
 
+    public void setEmergencyPowerMode(int value) {
+        setCharValue(RSCPTag.TAG_EMS_REQ_SET_EMERGENCY_POWER, (char) value);
+    }
+
+    /* primitive setters */
+
+    public void setCharValue(RSCPTag tag, char value) {
+        logger.trace("setCharValue tag:{} value:{}", tag.name(), (int) value);
+        byte[] reqFrame = E3DCRequests.buildRequestSetFrame(tag, value);
+        handleRequest(reqFrame);
+    }
+
     public void setuint32CharValue(RSCPTag containerTag, RSCPTag tag, int value) {
-        logger.trace("setuint32CharValue container:{} tag:{} vale:{}", containerTag.name(), tag.name(), value);
+        logger.trace("setuint32CharValue container:{} tag:{} value:{}", containerTag.name(), tag.name(), value);
         byte[] reqFrame = E3DCRequests.buildRequestSetFrame(containerTag, tag, value);
         handleRequest(reqFrame);
     }
 
     public void setCharValue(RSCPTag containerTag, RSCPTag tag, char value) {
-        logger.trace("setCharValue container:{} tag:{} vale:{}", containerTag.name(), tag.name(), value);
+        logger.trace("setCharValue container:{} tag:{} value:{}", containerTag.name(), tag.name(), (int) value);
         byte[] reqFrame = E3DCRequests.buildRequestSetFrame(containerTag, tag, value);
         handleRequest(reqFrame);
     }
 
     public void setBoolValue(RSCPTag containerTag, RSCPTag tag, Boolean value) {
-        logger.trace("setBoolValue container:{} tag:{} vale:{}", containerTag.name(), tag.name(), value);
+        logger.trace("setBoolValue container:{} tag:{} value:{}", containerTag.name(), tag.name(), value);
         byte[] reqFrame = E3DCRequests.buildRequestSetFrame(containerTag, tag, value);
         handleRequest(reqFrame);
     }
+
+    /* requests */
 
     public void requestE3DCData() {
         byte[] reqFrame = E3DCRequests.buildRequestFrame();
@@ -208,7 +225,7 @@ public class E3DCConnector {
             }
         } else if ("TAG_EMS_EMERGENCY_POWER_STATUS".equals(dt)) {
             handle.updateState(E3DCBindingConstants.CHANNEL_EmergencyPowerStatus,
-                    new DecimalType(data.getValueAsInt().orElse(-1)));
+                    new DecimalType((long) data.getValueAsLong().orElse(-1L)));
         } else if ("TAG_EP_IS_GRID_CONNECTED".equals(dt)) {
             handle.updateState(E3DCBindingConstants.CHANNEL_GridConnected,
                     OnOffType.from(data.getValueAsBool().orElse(false)));
@@ -249,7 +266,7 @@ public class E3DCConnector {
             handle.updateState(E3DCBindingConstants.CHANNEL_CurrentPMVoltageL3,
                     new QuantityType<>(data.getValueAsFloat().orElse((float) -1.0), Units.VOLT));
         } else if ("TAG_PM_MODE".equals(dt)) {
-            handle.updateState(E3DCBindingConstants.CHANNEL_Mode, new DecimalType(data.getValueAsInt().get()));
+            handle.updateState(E3DCBindingConstants.CHANNEL_Mode, new DecimalType((long) data.getValueAsLong().get()));
         }
     }
 
@@ -360,6 +377,7 @@ public class E3DCConnector {
             DataOutputStream dOut = new DataOutputStream(socket.getOutputStream());
             dOut.write(encryptedFrame);
             dOut.flush();
+            logger.debug("Finished sending {} encrypted bytes.", encryptedFrame.length);
             return encryptedFrame.length;
         } catch (Exception e) {
             logger.error("Error while encrypting and sending frame.", e);
@@ -386,7 +404,7 @@ public class E3DCConnector {
             byte[] data = new byte[4096];
             do {
                 int bytesRead = dIn.read(data, 0, data.length);
-                logger.info("Received {} bytes, append to buffer... ", bytesRead);
+                logger.debug("Received {} bytes, append to buffer... ", bytesRead);
                 if (bytesRead == -1) {
                     logger.warn("Socket closed unexpectedly by server.");
                     break;
@@ -395,7 +413,7 @@ public class E3DCConnector {
                 totalBytesRead += bytesRead;
             } while (dIn.available() > 0);
 
-            logger.info("Finished reading {} bytes.", totalBytesRead);
+            logger.debug("Finished reading {} bytes.", totalBytesRead);
             buffer.flush();
 
             byte[] decryptedData = decryptFunc.apply(buffer.toByteArray());

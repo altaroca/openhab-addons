@@ -87,6 +87,24 @@ public class E3DCHandler extends BaseThingHandler {
             int value = convertCommandToIntValue(command, 0, 500);
             e3dcconnect.setDischargeStartPower(value);
         }
+
+        if (E3DCBindingConstants.CHANNEL_EmergencyPowerStatus.equals(channelUID.getId())) {
+            int value = convertCommandToIntValue(command, 0, 4);
+            switch (value) { // align with values read from EmergencyPowerStatus
+                case 1: // activate
+                    value = 1;
+                    break;
+                case 2: // deactivate
+                    value = 0;
+                    break;
+                case 4: // island
+                    value = 2;
+                    break;
+                default:
+                    return; // ignore
+            }
+            e3dcconnect.setEmergencyPowerMode(value);
+        }
     }
 
     public int convertCommandToIntValue(Command command, int min, int max) {
@@ -135,7 +153,11 @@ public class E3DCHandler extends BaseThingHandler {
         logger.debug("Data table request interval {} seconds", readDataInterval);
 
         readDataJob = scheduler.scheduleWithFixedDelay(() -> {
-            e3dcconnect.requestE3DCData();
+            try {
+                e3dcconnect.requestE3DCData();
+            } catch (Throwable t) {
+                logger.warn("E3DC data request failed.", t);
+            }
         }, 0, readDataInterval, TimeUnit.SECONDS);
     }
 
@@ -152,7 +174,9 @@ public class E3DCHandler extends BaseThingHandler {
     public void dispose() {
         logger.debug("Disposing thing {}", getThing().getUID());
         cancelReadDataJob();
-        e3dcconnect.close();
+        if (e3dcconnect != null) {
+            e3dcconnect.close();
+        }
         logger.debug("Thing {} disposed", getThing().getUID());
     }
 

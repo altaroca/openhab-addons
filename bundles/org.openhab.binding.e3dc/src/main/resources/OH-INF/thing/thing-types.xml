@@ -202,14 +202,26 @@
 	<channel-type id="EmergencyPowerStatus">
 		<item-type>Number</item-type>
 		<label>Emergency Power Status</label>
-		<description>Emergency Power ready or island</description>
-		<state readOnly="true">
+		<description>Emergency Power active or island</description>
+		<state readOnly="false">
 			<options>
 				<option value="0">Not supported</option>
 				<option value="1">Active</option>
 				<option value="2">Inactive</option>
-				<option value="3">n/a</option>
+				<option value="3">Not available</option>
 				<option value="4">Motor switch misaligned</option>
+			</options>
+		</state>
+	</channel-type>
+	<channel-type id="EmergencyPowerStatusRequest">
+		<item-type>Number</item-type>
+		<label>Emergency Power Status Request</label>
+		<description>Emergency Power Request</description>
+		<state>
+			<options>
+				<option value="0">Inactive</option>
+				<option value="1">Active</option>
+				<option value="2">Island</option>
 			</options>
 		</state>
 	</channel-type>
