@@ -335,7 +335,7 @@
 		<item-type>Number:Energy</item-type>
 		<label>ConsumedProduction</label>
 		<description></description>
-        <state pattern="%.0f %unit%" readOnly="true"/>
+        <state pattern="%.0f %%" readOnly="true"/>
 	</channel-type>
 	<channel-type id="AutarkyLevel-History">
 		<item-type>Number:Percent</item-type>

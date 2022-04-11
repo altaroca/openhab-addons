@@ -400,7 +400,7 @@ public class E3DCConnector {
                     new DecimalType((double) data.getValueAsFloat().orElse(0.0f)));
         } else if ("TAG_DB_CONSUMED_PRODUCTION".equals(dt)) {
             handle.updateState(E3DCBindingConstants.CHANNEL_HISTORY_Consumed_Production + "-" + interval,
-                    new QuantityType<>(data.getValueAsFloat().orElse(0.0f), Units.WATT_HOUR));
+                    new QuantityType<>(data.getValueAsFloat().orElse(0.0f), Units.PERCENT));
         } else if ("TAG_DB_AUTARKY".equals(dt)) {
             handle.updateState(E3DCBindingConstants.CHANNEL_HISTORY_AutarkyLevel + "-" + interval,
                     new QuantityType<>(data.getValueAsFloat().orElse(0.0f), Units.PERCENT));
