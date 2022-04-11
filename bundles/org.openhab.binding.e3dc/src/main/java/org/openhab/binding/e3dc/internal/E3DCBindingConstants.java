@@ -57,4 +57,18 @@ public class E3DCBindingConstants {
     public static final String CHANNEL_EmergencyPowerStatus = "EmergencyPowerStatus";
     public static final String CHANNEL_GridConnected = "GridConnected";
     public static final String CHANNEL_SWRelease = "SWRelease";
+
+    public static final String CHANNEL_HISTORY_GraphIndex = "GraphIndex";
+    public static final String CHANNEL_HISTORY_BatteryPowerIn = "BatteryPowerIn";
+    public static final String CHANNEL_HISTORY_BatteryPowerOut = "BatteryPowerOut";
+    public static final String CHANNEL_HISTORY_DCPower = "DCPower";
+    public static final String CHANNEL_HISTORY_GridPowerIn = "GridPowerIn";
+    public static final String CHANNEL_HISTORY_GridPowerOut = "GridPowerOut";
+    public static final String CHANNEL_HISTORY_Consumption = "Consumption";
+    public static final String CHANNEL_HISTORY_PM0Power = "PM0Power";
+    public static final String CHANNEL_HISTORY_PM1Power = "PM1Power";
+    public static final String CHANNEL_HISTORY_BatteryChargeLevel = "BatteryChargeLevel";
+    public static final String CHANNEL_HISTORY_BatteryCycleCount = "BatteryCycleCount";
+    public static final String CHANNEL_HISTORY_Consumed_Production = "ConsumedProduction";
+    public static final String CHANNEL_HISTORY_AutarkyLevel = "AutarkyLevel";
 }

@@ -18,7 +18,12 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
+import java.util.Calendar;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.eclipse.jdt.annotation.NonNull;
@@ -55,6 +60,7 @@ public class E3DCConnector {
     private @Nullable E3DCHandler handle;
     private AES256Helper aesHelper;
     private Socket socket;
+    private Instant lastHistoryPollTime = null;
 
     public E3DCConnector(@NonNull E3DCHandler handle, E3DCConfiguration config) {
         this.handle = handle;
@@ -132,35 +138,45 @@ public class E3DCConnector {
     public void setCharValue(RSCPTag tag, char value) {
         logger.trace("setCharValue tag:{} value:{}", tag.name(), (int) value);
         byte[] reqFrame = E3DCRequests.buildRequestSetFrame(tag, value);
-        handleRequest(reqFrame);
+        handleRequest(reqFrame, respFrame -> handleE3DCResponse(respFrame));
     }
 
     public void setuint32CharValue(RSCPTag containerTag, RSCPTag tag, int value) {
         logger.trace("setuint32CharValue container:{} tag:{} value:{}", containerTag.name(), tag.name(), value);
         byte[] reqFrame = E3DCRequests.buildRequestSetFrame(containerTag, tag, value);
-        handleRequest(reqFrame);
+        handleRequest(reqFrame, respFrame -> handleE3DCResponse(respFrame));
     }
 
     public void setCharValue(RSCPTag containerTag, RSCPTag tag, char value) {
         logger.trace("setCharValue container:{} tag:{} value:{}", containerTag.name(), tag.name(), (int) value);
         byte[] reqFrame = E3DCRequests.buildRequestSetFrame(containerTag, tag, value);
-        handleRequest(reqFrame);
+        handleRequest(reqFrame, respFrame -> handleE3DCResponse(respFrame));
     }
 
     public void setBoolValue(RSCPTag containerTag, RSCPTag tag, Boolean value) {
         logger.trace("setBoolValue container:{} tag:{} value:{}", containerTag.name(), tag.name(), value);
         byte[] reqFrame = E3DCRequests.buildRequestSetFrame(containerTag, tag, value);
-        handleRequest(reqFrame);
+        handleRequest(reqFrame, respFrame -> handleE3DCResponse(respFrame));
     }
 
     /* requests */
 
     public void requestE3DCData() {
         byte[] reqFrame = E3DCRequests.buildRequestFrame();
-        handleRequest(reqFrame);
+        handleRequest(reqFrame, respFrame -> handleE3DCResponse(respFrame));
+
+        // if a new hour has started then get the accumulated data for the last hour
+        if ((lastHistoryPollTime == null) || (lastHistoryPollTime.atZone(ZoneOffset.UTC).getHour() != Instant.now()
+                .atZone(ZoneOffset.UTC).getHour())) {
+            // get start of last full hour
+            Instant iStart = Instant.now().minus(1L, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS);
+            reqFrame = E3DCRequests.buildRequestFrameHistory(iStart, Calendar.HOUR, 1);
+            handleRequest(reqFrame, respFrame -> handleHistoryResponse(respFrame, Calendar.HOUR));
+            lastHistoryPollTime = Instant.now(); // comment for debugging
+        }
     }
 
-    public void handleRequest(byte[] reqFrame) {
+    public void handleRequest(byte[] reqFrame, Consumer<RSCPFrame> consumer) {
         if (isNotConnected()) {
             connectE3DC();
         }
@@ -170,7 +186,7 @@ public class E3DCConnector {
         logger.trace("Decrypted frame received: {}", ByteUtils.byteArrayToHexString(decBytesReceived));
         RSCPFrame responseFrame = RSCPFrame.builder().buildFromRawBytes(decBytesReceived);
 
-        handleE3DCResponse(responseFrame);
+        consumer.accept(responseFrame);
         FrameLoggerHelper.logFrame(responseFrame);
     }
 
@@ -178,6 +194,43 @@ public class E3DCConnector {
         List<RSCPData> dataList = responseFrame.getData();
         for (RSCPData data : dataList) {
             handleUpdateData(data);
+        }
+    }
+
+    public void handleHistoryResponse(RSCPFrame responseFrame, int interval) {
+        logger.trace("handleHistoryResponse");
+        List<RSCPData> containerList = responseFrame.getData();
+        for (RSCPData container : containerList) {
+            String dt = container.getDataTag().name();
+            logger.trace("  got tag {}", dt);
+            if (Calendar.HOUR == interval) {
+                handleHistoryContainerData(container, "Hour");
+            } else if ("TAG_DB_HISTORY_DATA_DAY".equals(dt)) {
+                handleHistoryContainerData(container, "Day");
+            } else if ("TAG_DB_HISTORY_DATA_WEEK".equals(dt)) {
+                handleHistoryContainerData(container, "Week");
+            } else if ("TAG_DB_HISTORY_DATA_MONTH".equals(dt)) {
+                handleHistoryContainerData(container, "Month");
+            } else if ("TAG_DB_HISTORY_DATA_YEAR".equals(dt)) {
+                handleHistoryContainerData(container, "Year");
+            }
+        }
+    }
+
+    public void handleHistoryContainerData(RSCPData data, String interval) {
+        logger.trace("handleHistoryContainerData for {}", interval);
+        List<RSCPData> dataList = data.getContainerData();
+        for (RSCPData container : dataList) {
+            String dt = container.getDataTag().name();
+            logger.trace("  got tag {}", dt);
+            if ("TAG_DB_SUM_CONTAINER".equals(dt)) {
+                List<RSCPData> containedDataList = container.getContainerData();
+                for (RSCPData containedData : containedDataList) {
+                    handleUpdateHistoryData(containedData, interval);
+                }
+            } else if ("TAG_DB_VALUE_CONTAINER".equals(dt)) {
+                // ignore
+            }
         }
     }
 
@@ -305,6 +358,52 @@ public class E3DCConnector {
             handle.updateState(E3DCBindingConstants.CHANNEL_PowerSave, OnOffType.from(result));
         } else if ("TAG_EMS_RES_POWERSAVE_ENABLED".equals(dt)) {
             // maybe update TAG_EMS_POWERSAVE_ENABLED...?
+        }
+    }
+
+    private void handleUpdateHistoryData(RSCPData data, String interval) {
+        String dt = data.getDataTag().name();
+        logger.debug("handleUpdateHistoryData  : {}: {}", dt, data.getValueAsString());
+
+        if ("TAG_DB_GRAPH_INDEX".equals(dt)) {
+            handle.updateState(E3DCBindingConstants.CHANNEL_HISTORY_GraphIndex + "-" + interval,
+                    new QuantityType<>(data.getValueAsFloat().orElse(0.0f), Units.PERCENT));
+        } else if ("TAG_DB_BAT_POWER_IN".equals(dt)) {
+            handle.updateState(E3DCBindingConstants.CHANNEL_HISTORY_BatteryPowerIn + "-" + interval,
+                    new QuantityType<>(data.getValueAsFloat().orElse(0.0f), Units.WATT_HOUR));
+        } else if ("TAG_DB_BAT_POWER_OUT".equals(dt)) {
+            handle.updateState(E3DCBindingConstants.CHANNEL_HISTORY_BatteryPowerOut + "-" + interval,
+                    new QuantityType<>(data.getValueAsFloat().orElse(0.0f), Units.WATT_HOUR));
+        } else if ("TAG_DB_DC_POWER".equals(dt)) {
+            handle.updateState(E3DCBindingConstants.CHANNEL_HISTORY_DCPower + "-" + interval,
+                    new QuantityType<>(data.getValueAsFloat().orElse(0.0f), Units.WATT_HOUR));
+        } else if ("TAG_DB_GRID_POWER_IN".equals(dt)) {
+            handle.updateState(E3DCBindingConstants.CHANNEL_HISTORY_GridPowerIn + "-" + interval,
+                    new QuantityType<>(data.getValueAsFloat().orElse(0.0f), Units.WATT_HOUR));
+        } else if ("TAG_DB_GRID_POWER_OUT".equals(dt)) {
+            handle.updateState(E3DCBindingConstants.CHANNEL_HISTORY_GridPowerOut + "-" + interval,
+                    new QuantityType<>(data.getValueAsFloat().orElse(0.0f), Units.WATT_HOUR));
+        } else if ("TAG_DB_CONSUMPTION".equals(dt)) {
+            handle.updateState(E3DCBindingConstants.CHANNEL_HISTORY_Consumption + "-" + interval,
+                    new QuantityType<>(data.getValueAsFloat().orElse(0.0f), Units.WATT_HOUR));
+        } else if ("TAG_DB_PM_0_POWER".equals(dt)) {
+            handle.updateState(E3DCBindingConstants.CHANNEL_HISTORY_PM0Power + "-" + interval,
+                    new QuantityType<>(data.getValueAsFloat().orElse(0.0f), Units.WATT_HOUR));
+        } else if ("TAG_DB_PM_1_POWER".equals(dt)) {
+            handle.updateState(E3DCBindingConstants.CHANNEL_HISTORY_PM1Power + "-" + interval,
+                    new QuantityType<>(data.getValueAsFloat().orElse(0.0f), Units.WATT_HOUR));
+        } else if ("TAG_DB_BAT_CHARGE_LEVEL".equals(dt)) {
+            handle.updateState(E3DCBindingConstants.CHANNEL_HISTORY_BatteryChargeLevel + "-" + interval,
+                    new QuantityType<>(data.getValueAsFloat().orElse(0.0f), Units.PERCENT));
+        } else if ("TAG_DB_BAT_CYCLE_COUNT".equals(dt)) {
+            handle.updateState(E3DCBindingConstants.CHANNEL_HISTORY_BatteryCycleCount + "-" + interval,
+                    new DecimalType((double) data.getValueAsFloat().orElse(0.0f)));
+        } else if ("TAG_DB_CONSUMED_PRODUCTION".equals(dt)) {
+            handle.updateState(E3DCBindingConstants.CHANNEL_HISTORY_Consumed_Production + "-" + interval,
+                    new QuantityType<>(data.getValueAsFloat().orElse(0.0f), Units.WATT_HOUR));
+        } else if ("TAG_DB_AUTARKY".equals(dt)) {
+            handle.updateState(E3DCBindingConstants.CHANNEL_HISTORY_AutarkyLevel + "-" + interval,
+                    new QuantityType<>(data.getValueAsFloat().orElse(0.0f), Units.PERCENT));
         }
     }
 

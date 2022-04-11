@@ -12,8 +12,10 @@
  */
 package org.openhab.binding.e3dc.internal;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Optional;
 
@@ -156,6 +158,18 @@ public class E3DCRequests {
                         .build());
     }
 
+    public static void buildFrame06(Builder buildFrame, RSCPTag reqTag, Instant iStart, Duration dInterval,
+            Duration dSpan) {
+
+        buildFrame = buildFrame.addData(RSCPData.builder().tag(reqTag)
+                .containerValues(Arrays.asList(
+                        RSCPData.builder().tag(RSCPTag.TAG_DB_REQ_HISTORY_TIME_START).timestampValue(iStart).build(),
+                        RSCPData.builder().tag(RSCPTag.TAG_DB_REQ_HISTORY_TIME_INTERVAL).timestampValue(dInterval)
+                                .build(),
+                        RSCPData.builder().tag(RSCPTag.TAG_DB_REQ_HISTORY_TIME_SPAN).timestampValue(dSpan).build()))
+                .build());
+    }
+
     public static void buildFrame08(Builder buildFrame) {
         MultiReqGen(buildFrame, new RSCPTag[] { RSCPTag.TAG_SRV_REQ_IS_ONLINE });
     }
@@ -245,6 +259,46 @@ public class E3DCRequests {
 
         RSCPFrame reqFrame1 = buildFrame.build();
         return reqFrame1.getAsByteArray();
+    }
+
+    public static byte[] buildRequestFrameHistory(Instant iStart, int interval, int count) {
+
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(0);
+        cal.add(interval, 1);
+        Duration dInterval = Duration.ZERO.plusMillis(cal.getTimeInMillis()); // length of one interval
+        cal = Calendar.getInstance();
+        cal.setTimeInMillis(0);
+        cal.add(interval, count);
+        Duration dSpan = Duration.ZERO.plusMillis(cal.getTimeInMillis()); // length of count intervals
+
+        RSCPTag reqTag;
+        switch (interval) {
+            case Calendar.DATE:
+            case Calendar.DAY_OF_YEAR:
+            case Calendar.HOUR:
+            case Calendar.MINUTE:
+            case Calendar.SECOND:
+                reqTag = RSCPTag.TAG_DB_REQ_HISTORY_DATA_DAY;
+                break;
+            case Calendar.WEEK_OF_YEAR:
+                reqTag = RSCPTag.TAG_DB_REQ_HISTORY_DATA_WEEK;
+                break;
+            case Calendar.MONTH:
+                reqTag = RSCPTag.TAG_DB_REQ_HISTORY_DATA_MONTH;
+                break;
+            case Calendar.YEAR:
+                reqTag = RSCPTag.TAG_DB_REQ_HISTORY_DATA_YEAR;
+            default:
+                return null; // throw not supported?
+        }
+
+        Builder buildFrame = RSCPFrame.builder().timestamp(Instant.now());
+
+        buildFrame06(buildFrame, reqTag, iStart, dInterval, dSpan);
+
+        RSCPFrame reqFrame = buildFrame.build();
+        return reqFrame.getAsByteArray();
     }
 
     public static byte[] buildRequestSetFrame(RSCPTag tag, char value) {
