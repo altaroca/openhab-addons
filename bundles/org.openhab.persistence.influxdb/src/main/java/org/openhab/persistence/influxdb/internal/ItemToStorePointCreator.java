@@ -43,6 +43,11 @@ public class ItemToStorePointCreator {
     }
 
     public @Nullable InfluxPoint convert(Item item, @Nullable String storeAlias) {
+
+        return convert(item, Instant.now(), storeAlias);
+    }
+
+    public @Nullable InfluxPoint convert(Item item, Instant dateTime, @Nullable String storeAlias) {
         if (item.getState() instanceof UnDefType) {
             return null;
         }
@@ -53,7 +58,7 @@ public class ItemToStorePointCreator {
 
         Object value = InfluxDBStateConvertUtils.stateToObject(state);
 
-        InfluxPoint.Builder point = InfluxPoint.newBuilder(measurementName).withTime(Instant.now()).withValue(value)
+        InfluxPoint.Builder point = InfluxPoint.newBuilder(measurementName).withTime(dateTime).withValue(value)
                 .withTag(TAG_ITEM_NAME, itemName);
 
         addPointTags(item, point);
