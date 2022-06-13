@@ -44,17 +44,17 @@ public class ItemToStorePointCreator {
 
     public @Nullable InfluxPoint convert(Item item, @Nullable String storeAlias) {
 
-        return convert(item, Instant.now(), storeAlias);
+        State state = getItemState(item);
+        return convert(item, state, Instant.now(), storeAlias);
     }
 
-    public @Nullable InfluxPoint convert(Item item, Instant dateTime, @Nullable String storeAlias) {
-        if (item.getState() instanceof UnDefType) {
+    public @Nullable InfluxPoint convert(Item item, State state, Instant dateTime, @Nullable String storeAlias) {
+        if (state instanceof UnDefType) {
             return null;
         }
 
         String measurementName = calculateMeasurementName(item, storeAlias);
         String itemName = item.getName();
-        State state = getItemState(item);
 
         Object value = InfluxDBStateConvertUtils.stateToObject(state);
 

@@ -219,7 +219,7 @@ public class InfluxDBPersistenceService implements ModifiablePersistenceService 
     @Override
     public void store(Item item, ZonedDateTime date, State state) {
         if (influxDBRepository != null && influxDBRepository.isConnected()) {
-            InfluxPoint point = itemToStorePointCreator.convert(item, date.toInstant(), null);
+            InfluxPoint point = itemToStorePointCreator.convert(item, state, date.toInstant(), null);
             if (point != null) {
                 logger.trace("Storing item {} in InfluxDB point {}", item, point);
                 influxDBRepository.write(point);
