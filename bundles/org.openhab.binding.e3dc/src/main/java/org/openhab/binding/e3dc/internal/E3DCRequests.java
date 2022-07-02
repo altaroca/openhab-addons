@@ -184,7 +184,7 @@ public class E3DCRequests {
                 new RSCPTag[] { RSCPTag.TAG_INFO_REQ_SERIAL_NUMBER, RSCPTag.TAG_INFO_REQ_PRODUCTION_DATE,
                         RSCPTag.TAG_INFO_REQ_IP_ADDRESS, RSCPTag.TAG_INFO_REQ_SUBNET_MASK,
                         RSCPTag.TAG_INFO_REQ_MAC_ADDRESS, RSCPTag.TAG_INFO_REQ_GATEWAY, RSCPTag.TAG_INFO_REQ_DNS,
-                        RSCPTag.TAG_INFO_REQ_DHCP_STATUS, RSCPTag.TAG_INFO_REQ_TIME, RSCPTag.TAG_INFO_REQ_UTC_TIME,
+                        RSCPTag.TAG_INFO_REQ_DHCP_STATUS, RSCPTag.TAG_INFO_REQ_UTC_TIME, RSCPTag.TAG_INFO_REQ_TIME,
                         RSCPTag.TAG_INFO_REQ_TIME_ZONE, RSCPTag.TAG_INFO_REQ_SW_RELEASE });
     }
 
@@ -243,7 +243,8 @@ public class E3DCRequests {
                         RSCPTag.TAG_EMS_REQ_POWER_HOME, RSCPTag.TAG_EMS_REQ_POWER_GRID, RSCPTag.TAG_EMS_REQ_POWER_ADD,
                         RSCPTag.TAG_EMS_REQ_AUTARKY, RSCPTag.TAG_EMS_REQ_SELF_CONSUMPTION, RSCPTag.TAG_EMS_REQ_BAT_SOC,
                         RSCPTag.TAG_EMS_REQ_GET_POWER_SETTINGS, RSCPTag.TAG_EMS_REQ_EMERGENCY_POWER_STATUS,
-                        RSCPTag.TAG_EP_REQ_IS_GRID_CONNECTED, RSCPTag.TAG_INFO_REQ_SW_RELEASE });
+                        RSCPTag.TAG_EP_REQ_IS_GRID_CONNECTED, RSCPTag.TAG_INFO_REQ_SW_RELEASE,
+                        RSCPTag.TAG_INFO_REQ_TIME_ZONE, RSCPTag.TAG_INFO_REQ_UTC_TIME });
 
         buildFrame = buildFrame
                 .addData(RSCPData.builder().tag(RSCPTag.TAG_PM_REQ_DATA)
@@ -274,18 +275,21 @@ public class E3DCRequests {
 
         RSCPTag reqTag;
         switch (interval) {
-            case Calendar.DATE:
-            case Calendar.DAY_OF_YEAR:
             case Calendar.HOUR:
             case Calendar.MINUTE:
             case Calendar.SECOND:
                 reqTag = RSCPTag.TAG_DB_REQ_HISTORY_DATA_DAY;
                 break;
+            case Calendar.DATE:
+            case Calendar.DAY_OF_YEAR:
+                reqTag = RSCPTag.TAG_DB_REQ_HISTORY_DATA_MONTH;
+                // reqTag = RSCPTag.TAG_DB_REQ_HISTORY_DATA_WEEK;
+                break;
             case Calendar.WEEK_OF_YEAR:
-                reqTag = RSCPTag.TAG_DB_REQ_HISTORY_DATA_WEEK;
+                reqTag = RSCPTag.TAG_DB_REQ_HISTORY_DATA_YEAR;
                 break;
             case Calendar.MONTH:
-                reqTag = RSCPTag.TAG_DB_REQ_HISTORY_DATA_MONTH;
+                reqTag = RSCPTag.TAG_DB_REQ_HISTORY_DATA_YEAR;
                 break;
             case Calendar.YEAR:
                 reqTag = RSCPTag.TAG_DB_REQ_HISTORY_DATA_YEAR;
@@ -303,6 +307,18 @@ public class E3DCRequests {
 
     public static byte[] buildRequestSetFrame(RSCPTag tag, char value) {
         Builder buildFrame = RSCPFrame.builder().timestamp(Instant.now()).addData(ReqGeni(tag, value));
+        return requestFrameFromBuildFrame(buildFrame);
+    }
+
+    public static byte[] buildRequestSetFrame(RSCPTag tag, String value) {
+        Builder buildFrame = RSCPFrame.builder().timestamp(Instant.now())
+                .addData(RSCPData.builder().tag(tag).stringValue(value).build());
+        return requestFrameFromBuildFrame(buildFrame);
+    }
+
+    public static byte[] buildRequestSetFrame(RSCPTag tag, Instant value) {
+        Builder buildFrame = RSCPFrame.builder().timestamp(Instant.now())
+                .addData(RSCPData.builder().tag(tag).timestampValue(value).build());
         return requestFrameFromBuildFrame(buildFrame);
     }
 

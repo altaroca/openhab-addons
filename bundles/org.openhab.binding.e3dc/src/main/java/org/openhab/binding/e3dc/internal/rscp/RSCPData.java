@@ -280,8 +280,10 @@ public class RSCPData {
             case CHAR8:
             case UCHAR8:
             case INT16:
+                return Optional.of(String.format("%d", getValueAsShort().orElse((short) 0)));
             case UINT16:
             case INT32:
+                return Optional.of(String.format("%d", getValueAsInt().orElse(0)));
             case UINT32:
             case INT64:
                 return Optional.of(String.format("%d", getValueAsLong().orElse(0L)));

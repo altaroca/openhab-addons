@@ -49,7 +49,7 @@
     <url>https://github.com/openhab/openhab-addons/issues</url>
   </issueManagement>
 
-  <distributionManagement>
+  <!-- distributionManagement>
     <repository>
       <id>jfrog-release</id>
       <url>${oh.repo.distBaseUrl}/libs-release-local</url>
@@ -58,7 +58,7 @@
       <id>jfrog</id>
       <url>${oh.repo.snapshotBaseUrl}/libs-snapshot-local</url>
     </snapshotRepository>
-  </distributionManagement>
+  </distributionManagement -->
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

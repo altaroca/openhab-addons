@@ -58,7 +58,6 @@
 			<!-- 0A: TAG_INFO_REQ_SW_RELEASE => TAG_INFO_SW_RELEASE -->
 			<channel id="SWRelease" typeId="SWRelease"/>
 			<!-- HISTORY: Hour -->
-			<channel id="GraphIndex-Hour" typeId="GraphIndex-History"/>
 			<channel id="BatteryPowerIn-Hour" typeId="BatteryPowerIn-History"/>
 			<channel id="BatteryPowerOut-Hour" typeId="BatteryPowerOut-History"/>
 			<channel id="DCPower-Hour" typeId="DCPower-History"/>
@@ -72,7 +71,6 @@
 			<channel id="ConsumedProduction-Hour" typeId="ConsumedProduction-History"/>
 			<channel id="AutarkyLevel-Hour" typeId="AutarkyLevel-History"/>
 			<!-- HISTORY: Day -->
-			<channel id="GraphIndex-Day" typeId="GraphIndex-History"/>
 			<channel id="BatteryPowerIn-Day" typeId="BatteryPowerIn-History"/>
 			<channel id="BatteryPowerOut-Day" typeId="BatteryPowerOut-History"/>
 			<channel id="DCPower-Day" typeId="DCPower-History"/>
@@ -85,6 +83,19 @@
 			<channel id="BatteryCycleCount-Day" typeId="BatteryCycleCount-History"/>
 			<channel id="ConsumedProduction-Day" typeId="ConsumedProduction-History"/>
 			<channel id="AutarkyLevel-Day" typeId="AutarkyLevel-History"/>
+			<!-- HISTORY: Month -->
+			<channel id="BatteryPowerIn-Month" typeId="BatteryPowerIn-History"/>
+			<channel id="BatteryPowerOut-Month" typeId="BatteryPowerOut-History"/>
+			<channel id="DCPower-Month" typeId="DCPower-History"/>
+			<channel id="GridPowerIn-Month" typeId="GridPowerIn-History"/>
+			<channel id="GridPowerOut-Month" typeId="GridPowerOut-History"/>
+			<channel id="Consumption-Month" typeId="Consumption-History"/>
+			<channel id="PM0Power-Month" typeId="PM0Power-History"/>
+			<channel id="PM1Power-Month" typeId="PM1Power-History"/>
+			<channel id="BatteryChargeLevel-Month" typeId="BatteryChargeLevel-History"/>
+			<channel id="BatteryCycleCount-Month" typeId="BatteryCycleCount-History"/>
+			<channel id="ConsumedProduction-Month" typeId="ConsumedProduction-History"/>
+			<channel id="AutarkyLevel-Month" typeId="AutarkyLevel-History"/>
 
 		</channels>
 		<config-description>
@@ -265,12 +276,6 @@
 		<description>Version of Software Release</description>
 		<state readOnly="true"/>
 	</channel-type>
-	<channel-type id="GraphIndex-History">
-		<item-type>Number</item-type>
-		<label>Graph Index</label>
-		<description></description>
-		<state readOnly="true"/>
-	</channel-type>
 	<channel-type id="BatteryPowerIn-History">
 		<item-type>Number:Energy</item-type>
 		<label>BatteryPowerIn</label>
@@ -281,49 +286,49 @@
 		<item-type>Number:Energy</item-type>
 		<label>BatteryPowerOut</label>
 		<description></description>
-        <state pattern="%.0f %unit%" readOnly="true"/>
+		<state pattern="%.0f %unit%" readOnly="true"/>
 	</channel-type>
 	<channel-type id="DCPower-History">
 		<item-type>Number:Energy</item-type>
 		<label>DCPower</label>
 		<description></description>
-        <state pattern="%.0f %unit%" readOnly="true"/>
+		<state pattern="%.0f %unit%" readOnly="true"/>
 	</channel-type>
 	<channel-type id="GridPowerIn-History">
 		<item-type>Number:Energy</item-type>
 		<label>GridPowerIn</label>
 		<description></description>
-        <state pattern="%.0f %unit%" readOnly="true"/>
+		<state pattern="%.0f %unit%" readOnly="true"/>
 	</channel-type>
 	<channel-type id="GridPowerOut-History">
 		<item-type>Number:Energy</item-type>
 		<label>GridPowerOut</label>
 		<description></description>
-        <state pattern="%.0f %unit%" readOnly="true"/>
+		<state pattern="%.0f %unit%" readOnly="true"/>
 	</channel-type>
 	<channel-type id="Consumption-History">
 		<item-type>Number:Energy</item-type>
 		<label>Consumption</label>
 		<description></description>
-        <state pattern="%.0f %unit%" readOnly="true"/>
+		<state pattern="%.0f %unit%" readOnly="true"/>
 	</channel-type>
 	<channel-type id="PM0Power-History">
 		<item-type>Number:Energy</item-type>
 		<label>PM0Power</label>
 		<description></description>
-        <state pattern="%.0f %unit%" readOnly="true"/>
+		<state pattern="%.0f %unit%" readOnly="true"/>
 	</channel-type>
 	<channel-type id="PM1Power-History">
 		<item-type>Number:Energy</item-type>
 		<label>PM1Power</label>
 		<description></description>
-        <state pattern="%.0f %unit%" readOnly="true"/>
+		<state pattern="%.0f %unit%" readOnly="true"/>
 	</channel-type>
 	<channel-type id="BatteryChargeLevel-History">
 		<item-type>Number:Percent</item-type>
 		<label>BatteryChargeLevel</label>
 		<description></description>
-        <state pattern="%.0f %%" readOnly="true"/>
+		<state pattern="%.0f %%" readOnly="true"/>
 	</channel-type>
 	<channel-type id="BatteryCycleCount-History">
 		<item-type>Number</item-type>
@@ -335,12 +340,12 @@
 		<item-type>Number:Energy</item-type>
 		<label>ConsumedProduction</label>
 		<description></description>
-        <state pattern="%.0f %%" readOnly="true"/>
+		<state pattern="%.0f %%" readOnly="true"/>
 	</channel-type>
 	<channel-type id="AutarkyLevel-History">
 		<item-type>Number:Percent</item-type>
 		<label>AutarkyLevel</label>
 		<description></description>
-        <state pattern="%.0f %%" readOnly="true"/>
+		<state pattern="%.0f %%" readOnly="true"/>
 	</channel-type>
 </thing:thing-descriptions>

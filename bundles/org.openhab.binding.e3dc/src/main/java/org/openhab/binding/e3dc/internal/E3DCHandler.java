@@ -12,6 +12,7 @@
  */
 package org.openhab.binding.e3dc.internal;
 
+import java.time.ZonedDateTime;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -143,6 +144,14 @@ public class E3DCHandler extends BaseThingHandler {
         });
     }
 
+    private void disconnectDevice() {
+        cancelReadDataJob();
+        if (e3dcconnect != null) {
+            e3dcconnect.close();
+            e3dcconnect = null;
+        }
+    }
+
     private void scheduleReadDataJob() {
         int readDataInterval = config.getUpdateinterval();
         // Ensure that the request is finished
@@ -167,22 +176,25 @@ public class E3DCHandler extends BaseThingHandler {
                 readDataJob.cancel(true);
                 logger.debug("Scheduled data table requests cancelled");
             }
+            readDataJob = null;
         }
     }
 
     @Override
     public void dispose() {
         logger.debug("Disposing thing {}", getThing().getUID());
-        cancelReadDataJob();
-        if (e3dcconnect != null) {
-            e3dcconnect.close();
-        }
+        disconnectDevice();
         logger.debug("Thing {} disposed", getThing().getUID());
     }
 
     @Override
-    protected void updateState(String strChannelName, State dt) {
-        super.updateState(strChannelName, dt);
+    protected void updateState(String strChannelName, State state) {
+        super.updateState(strChannelName, state);
+    }
+
+    @Override
+    protected void updateHistoricState(String strChannelName, State state, ZonedDateTime dateTime) {
+        super.updateHistoricState(strChannelName, state, dateTime);
     }
 
     @Override
