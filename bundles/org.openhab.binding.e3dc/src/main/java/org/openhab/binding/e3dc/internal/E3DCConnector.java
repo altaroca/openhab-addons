@@ -142,7 +142,17 @@ public class E3DCConnector {
         setCharValue(RSCPTag.TAG_EMS_REQ_SET_EMERGENCY_POWER, (char) value);
     }
 
+    public void systemReboot() {
+        setNoneValue(RSCPTag.TAG_SYS_REQ_SYSTEM_REBOOT);
+    }
+
     /* primitive setters */
+
+    public void setNoneValue(RSCPTag tag) {
+        logger.trace("setNoneValue tag:{}", tag.name());
+        byte[] reqFrame = E3DCRequests.buildRequestSetFrame(tag);
+        handleRequest(reqFrame, respFrame -> handleE3DCResponse(respFrame));
+    }
 
     public void setCharValue(RSCPTag tag, char value) {
         logger.trace("setCharValue tag:{} value:{}", tag.name(), (int) value);
@@ -449,6 +459,11 @@ public class E3DCConnector {
                     new DecimalType((long) data.getValueAsLong().orElse(-1L)));
         } else if ("TAG_EP_IS_GRID_CONNECTED".equals(dt)) {
             handle.updateState(E3DCBindingConstants.CHANNEL_GridConnected,
+                    OnOffType.from(data.getValueAsBool().orElse(false)));
+        } else if ("TAG_SYS_SYSTEM_REBOOT".equals(dt)) {
+            logger.warn("System reboot request with result {}", data.getValueAsInt());
+        } else if ("TAG_SYS_IS_SYSTEM_REBOOTING".equals(dt)) {
+            handle.updateState(E3DCBindingConstants.CHANNEL_SystemReboot,
                     OnOffType.from(data.getValueAsBool().orElse(false)));
         } else if ("TAG_INFO_SW_RELEASE".equals(dt)) {
             handle.updateState(E3DCBindingConstants.CHANNEL_SWRelease,

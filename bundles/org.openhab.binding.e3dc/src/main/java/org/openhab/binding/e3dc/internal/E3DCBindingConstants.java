@@ -57,6 +57,7 @@ public class E3DCBindingConstants {
     public static final String CHANNEL_EmergencyPowerStatus = "EmergencyPowerStatus";
     public static final String CHANNEL_GridConnected = "GridConnected";
     public static final String CHANNEL_SWRelease = "SWRelease";
+    public static final String CHANNEL_SystemReboot = "SystemReboot";
 
     public static final String CHANNEL_HISTORY_GraphIndex = "GraphIndex";
     public static final String CHANNEL_HISTORY_BatteryPowerIn = "BatteryPowerIn";

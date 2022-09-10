@@ -57,6 +57,8 @@
 			<channel id="GridConnected" typeId="GridConnected"/>
 			<!-- 0A: TAG_INFO_REQ_SW_RELEASE => TAG_INFO_SW_RELEASE -->
 			<channel id="SWRelease" typeId="SWRelease"/>
+			<!-- 0B: TAG_SYS_REQ_SYSTEM_REBOOT => TAG_SYS_IS_SYSTEM_REBOOTING -->
+			<channel id="SystemReboot" typeId="SystemReboot"/>
 			<!-- HISTORY: Hour -->
 			<channel id="BatteryPowerIn-Hour" typeId="BatteryPowerIn-History"/>
 			<channel id="BatteryPowerOut-Hour" typeId="BatteryPowerOut-History"/>
@@ -269,6 +271,12 @@
 		<label>Grid Connected</label>
 		<description>Indicates connection to Grid</description>
 		<state readOnly="true"/>
+	</channel-type>
+	<channel-type id="SystemReboot">
+		<item-type>Switch</item-type>
+		<label>System Reboot</label>
+		<description>Initiates a system reboot and provides reboot status</description>
+		<state readOnly="false"/>
 	</channel-type>
 	<channel-type id="SWRelease">
 		<item-type>String</item-type>

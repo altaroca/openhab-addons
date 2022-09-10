@@ -305,6 +305,11 @@ public class E3DCRequests {
         return reqFrame.getAsByteArray();
     }
 
+    public static byte[] buildRequestSetFrame(RSCPTag tag) {
+        Builder buildFrame = RSCPFrame.builder().timestamp(Instant.now()).addData(ReqGen(tag));
+        return requestFrameFromBuildFrame(buildFrame);
+    }
+
     public static byte[] buildRequestSetFrame(RSCPTag tag, char value) {
         Builder buildFrame = RSCPFrame.builder().timestamp(Instant.now()).addData(ReqGeni(tag, value));
         return requestFrameFromBuildFrame(buildFrame);

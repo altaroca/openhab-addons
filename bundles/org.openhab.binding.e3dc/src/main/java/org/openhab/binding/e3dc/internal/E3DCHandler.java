@@ -106,6 +106,13 @@ public class E3DCHandler extends BaseThingHandler {
             }
             e3dcconnect.setEmergencyPowerMode(value);
         }
+
+        if (E3DCBindingConstants.CHANNEL_SystemReboot.equals(channelUID.getId())) {
+            boolean value = (command == OnOffType.ON);
+            if (value) {
+                e3dcconnect.systemReboot();
+            }
+        }
     }
 
     public int convertCommandToIntValue(Command command, int min, int max) {
