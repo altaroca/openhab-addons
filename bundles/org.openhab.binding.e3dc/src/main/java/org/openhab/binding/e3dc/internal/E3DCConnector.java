@@ -58,12 +58,14 @@ import org.slf4j.LoggerFactory;
 public class E3DCConnector {
     private static final int maxRetries = 3;
     private static final long sleepMillisBeforeRetry = 5000;
+    private static final int maxErrors = 3;
     private static final Logger logger = LoggerFactory.getLogger(E3DCConnector.class);
 
     private @Nullable E3DCConfiguration config;
     private @Nullable E3DCHandler handle;
     private AES256Helper aesHelper;
     private Socket socket;
+    private int errorCount = 0;
     private Instant lastHistoryPollTime = null;
     private ZoneId deviceTimeZone = null;
     private long deviceTimeShiftMillis = 0L;
@@ -96,6 +98,7 @@ public class E3DCConnector {
                 Integer bytesSent = sendFrameToServer(aesHelper::encrypt, authFrame);
                 byte[] decBytesReceived = receiveFrameFromServer(aesHelper::decrypt);
                 logger.debug("Authentication: Received {} decrypted bytes from server.", decBytesReceived.length);
+                errorCount = 0;
             } catch (UnknownHostException e) {
                 handle.updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
                         "Could not connect to host");
@@ -319,12 +322,22 @@ public class E3DCConnector {
         if (isNotConnected()) {
             connectE3DC();
         }
-        logger.trace("Unencrypted frame to send: {}", ByteUtils.byteArrayToHexString(reqFrame));
-        Integer bytesSent = sendFrameToServer(aesHelper::encrypt, reqFrame);
-        byte[] decBytesReceived = receiveFrameFromServer(aesHelper::decrypt);
-        logger.trace("Decrypted frame received: {}", ByteUtils.byteArrayToHexString(decBytesReceived));
-        RSCPFrame responseFrame = RSCPFrame.builder().buildFromRawBytes(decBytesReceived);
-
+        RSCPFrame responseFrame;
+        try {
+            logger.trace("Unencrypted frame to send: {}", ByteUtils.byteArrayToHexString(reqFrame));
+            Integer bytesSent = sendFrameToServer(aesHelper::encrypt, reqFrame);
+            byte[] decBytesReceived = receiveFrameFromServer(aesHelper::decrypt);
+            logger.trace("Decrypted frame received: {}", ByteUtils.byteArrayToHexString(decBytesReceived));
+            responseFrame = RSCPFrame.builder().buildFromRawBytes(decBytesReceived);
+            errorCount = 0;
+        } catch (Throwable e) {
+            ++errorCount;
+            if (errorCount > maxErrors) {
+                handle.updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
+                        "Too many communication errors");
+            }
+            return;
+        }
         consumer.accept(responseFrame);
         FrameLoggerHelper.logFrame(responseFrame);
     }
@@ -702,7 +715,7 @@ public class E3DCConnector {
      * @param decryptFunc A function to decrypt the received byte array.
      * @return Either an exception or the decrypted response as byte array.
      */
-    public byte[] receiveFrameFromServer(Function<byte[], byte[]> decryptFunc) {
+    public byte[] receiveFrameFromServer(Function<byte[], byte[]> decryptFunc) throws IOException {
         if (isNotConnected()) {
             throw new IllegalStateException("Not connected to server. Must connect to server first before sending.");
         }
@@ -732,7 +745,7 @@ public class E3DCConnector {
             return decryptedData;
         } catch (Exception e) {
             logger.error("Error while receiving and decrypting frame.", e);
+            throw new IOException(e);
         }
-        return null;
     }
 }
